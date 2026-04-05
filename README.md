@@ -46,17 +46,3 @@ If you want to reach more of the modern web, run a compatibility proxy on anothe
 
 - WebOne: <https://github.com/atauenis/webone>
 - WRP (Web Rendering Proxy): <https://github.com/tenox7/wrp>
-
-## Debugging
-
-Use a different locale inside the compatibility environment:
-
-```bash
-LANG_OVERRIDE=en_US ./run-communicator.sh
-```
-
-Disable the default async DNS workaround:
-
-```bash
-MOZILLA_NO_ASYNC_DNS=False ./run-communicator.sh
-```
