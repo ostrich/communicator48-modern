@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMMUNICATOR_ARCHIVE="${COMMUNICATOR_ARCHIVE:-$ROOT_DIR/communicator-v48-us.x86-unknown-linux2.2.tar.gz}"
+COMMUNICATOR_ARCHIVE_SHA256="4aadd9ddffaf68df1142d32aa1aba418399e5b9fa52cbafe2dc212813e9aca82"
 INSTALL_ARCHIVE_DIR="$ROOT_DIR/compat/archives/install"
 DEB_ARCHIVE_DIR="$ROOT_DIR/compat/archives/debs"
 BUILD_DIR="$ROOT_DIR/compat/build"
@@ -24,6 +25,20 @@ need_cmd() {
     printf 'missing required command: %s\n' "$1" >&2
     exit 1
   }
+}
+
+verify_sha256() {
+  local path="$1"
+  local expected="$2"
+  local actual
+
+  actual="$(sha256sum "$path" | awk '{print $1}')"
+  if [[ "$actual" != "$expected" ]]; then
+    printf 'checksum mismatch for %s\n' "$path" >&2
+    printf 'expected: %s\n' "$expected" >&2
+    printf 'actual:   %s\n' "$actual" >&2
+    exit 1
+  fi
 }
 
 fetch_if_missing() {
@@ -70,10 +85,13 @@ need_cmd ar
 need_cmd tar
 need_cmd find
 need_cmd gzip
+need_cmd sha256sum
 if [[ ! -f "$COMMUNICATOR_ARCHIVE" ]]; then
   printf 'missing Communicator archive: %s\n' "$COMMUNICATOR_ARCHIVE" >&2
   exit 1
 fi
+
+verify_sha256 "$COMMUNICATOR_ARCHIVE" "$COMMUNICATOR_ARCHIVE_SHA256"
 
 mkdir -p "$INSTALL_ARCHIVE_DIR" "$DEB_ARCHIVE_DIR"
 
