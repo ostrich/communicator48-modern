@@ -46,7 +46,7 @@ fetch_if_missing() {
   local dest="$2"
   if [[ ! -f "$dest" ]]; then
     printf 'downloading %s\n' "$(basename "$dest")"
-    curl -fL "$url" -o "$dest"
+    curl -fL --remove-on-error "$url" -o "$dest"
   fi
 }
 

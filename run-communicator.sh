@@ -13,12 +13,15 @@ NETSCAPE_BIN="$APP_DIR/netscape"
 LOADER="$GLIBC_DIR/ld-linux.so.2"
 LIBRARY_PATH="$COMPAT_LIB_DIR:$GLIBC_DIR"
 HOSTNAME_VALUE="$(hostname)"
+ADDED_FONT_PATHS=()
 
 add_font_path() {
   local path="$1"
   if [[ -d "$path" ]] && command -v xset >/dev/null 2>&1; then
     xset q 2>/dev/null | grep -Fq "$path" && return 0
-    xset +fp "$path" >/dev/null 2>&1 || true
+    if xset +fp "$path" >/dev/null 2>&1; then
+      ADDED_FONT_PATHS+=("$path")
+    fi
   fi
 }
 
@@ -30,9 +33,10 @@ remove_font_path() {
 }
 
 cleanup_font_paths() {
-  remove_font_path "$FONT_ROOT/misc"
-  remove_font_path "$FONT_ROOT/75dpi"
-  remove_font_path "$FONT_ROOT/100dpi"
+  local path
+  for path in "${ADDED_FONT_PATHS[@]}"; do
+    remove_font_path "$path"
+  done
   if command -v xset >/dev/null 2>&1; then
     xset fp rehash >/dev/null 2>&1 || true
   fi
@@ -81,6 +85,11 @@ cat >"$RUNTIME_ETC_DIR/hosts" <<EOF
 ::1 localhost
 EOF
 
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+trap cleanup_font_paths EXIT
+
 if command -v xset >/dev/null 2>&1; then
   add_font_path "$FONT_ROOT/misc"
   add_font_path "$FONT_ROOT/75dpi"
@@ -89,11 +98,6 @@ if command -v xset >/dev/null 2>&1; then
 else
   printf 'warning: xset not found; bundled bitmap fonts were not registered, so old X font warnings may remain.\n' >&2
 fi
-
-trap 'exit 130' INT
-trap 'exit 143' TERM
-trap 'exit 129' HUP
-trap cleanup_font_paths EXIT
 
 bwrap \
   --bind / / \
